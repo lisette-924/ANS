@@ -672,12 +672,20 @@ def plot(structure, seed=None):
             return None
         if artist.__class__.__name__ in {'Spine', 'XAxis', 'YAxis'}:
             return None
-        for getter_name in ('get_window_extent', 'get_tightbbox'):
+        if artist.__class__.__name__ == 'Annotation' and artist.get_text() == '':
+            getter_order = ('get_tightbbox',)
+        else:
+            getter_order = ('get_tightbbox', 'get_window_extent')
+
+        for getter_name in getter_order:
             try:
                 bbox = getattr(artist, getter_name)(renderer)
             except Exception:
                 continue
             if bbox is not None and bbox.width > 0 and bbox.height > 0:
+                # Empty-text annotations can return a default tiny box at the origin.
+                if bbox.x0 == 0 and bbox.y0 == 0 and bbox.width <= 1 and bbox.height <= 1:
+                    continue
                 return bbox
         return None
 
